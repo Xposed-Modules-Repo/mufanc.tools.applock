@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">AppLock</string>
+    <string name="module_desc">防止应用被侧滑杀死或一键清理</string>
+
+    <string name="error_dialog_title">哦哟……好像哪里不对？！</string>
+    <string name="error_dialog_positive">退出</string>
+    <string name="module_activated_yes">模块已启用</string>
+    <string name="module_activated_no">模块未启用</string>
+    <string name="service_found_yes">系统服务运行中</string>
+    <string name="service_found_no">未发现系统服务</string>
+    <string name="connect_test_yes">连接测试成功</string>
+    <string name="connect_test_no">连接测试失败</string>
+</resources>
