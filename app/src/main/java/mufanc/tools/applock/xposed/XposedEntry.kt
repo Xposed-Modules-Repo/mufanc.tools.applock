@@ -7,6 +7,7 @@ import com.github.kyuubiran.ezxhelper.utils.findMethod
 import com.github.kyuubiran.ezxhelper.utils.hookReplace
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.IXposedHookZygoteInit
+import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import mufanc.tools.applock.BuildConfig
 import mufanc.tools.applock.app.MyApplication
@@ -30,6 +31,7 @@ class XposedEntry : IXposedHookZygoteInit, IXposedHookLoadPackage {
             }
         } catch (err: Throwable) {
             Log.e(err)
+            XposedBridge.log(err)
         }
     }
 }

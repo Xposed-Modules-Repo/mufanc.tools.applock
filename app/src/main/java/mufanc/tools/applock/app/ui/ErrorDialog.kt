@@ -34,6 +34,7 @@ object ErrorDialog {
 
         val binding = ErrorDialogBinding.inflate(dialog.layoutInflater)
         dialog.setView(binding.root)
+        dialog.setCanceledOnTouchOutside(false)
         with (binding) {
             setStyle(p1, moduleActivatedCard, R.string.module_activated_yes, R.string.module_activated_no)
             setStyle(p2, serviceFoundCard, R.string.service_found_yes, R.string.service_found_no)

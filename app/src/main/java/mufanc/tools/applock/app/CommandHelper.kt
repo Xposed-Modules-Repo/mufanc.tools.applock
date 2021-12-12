@@ -4,11 +4,10 @@ import android.os.Parcel
 import mufanc.tools.applock.xposed.ProcessManagerService
 
 object CommandHelper {
-    fun command(operation: String, args: Array<String>): String? {
+    fun command(operation: String, args: String): String? {
         val sender = Parcel.obtain()
         sender.writeString(operation)
-        sender.writeInt(args.size)
-        sender.writeStringArray(args)
+        sender.writeString(args)
         val receiver = Parcel.obtain()
         MyApplication.processManager?.transact(
             ProcessManagerService.transactCode,
@@ -18,14 +17,11 @@ object CommandHelper {
     }
 
     fun onCommand(
-        data: Parcel, reply: Parcel,
-        callback: (String, Array<String>) -> String
+        data: Any, reply: Any,
+        callback: (String, String) -> String
     ) {
-        val operation = data.readString()!!
-        val size = data.readInt()
-        val args = arrayOfNulls<String>(size)
-        data.readStringArray(args)
-        @Suppress("Unchecked_Cast")
-        reply.writeString(callback(operation, args as Array<String>))
+        val operation = (data as Parcel).readString()!!
+        val args = data.readString()!!
+        (reply as Parcel).writeString(callback(operation, args))
     }
 }
