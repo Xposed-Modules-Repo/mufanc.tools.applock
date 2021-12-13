@@ -12,11 +12,13 @@ import miui.process.ProcessConfig
 import mufanc.tools.applock.BuildConfig
 import mufanc.tools.applock.app.CommandHelper
 import java.io.File
+import java.lang.reflect.Field
+import java.lang.reflect.Method
 import java.util.*
 
 @SuppressLint("StaticFieldLeak")
 object ProcessManagerService {
-    const val transactCode = 16716  // ascii "AL" from [A]pp[L]ock
+    const val transactCode = 1801678668  // struct.unpack('I', b'Lock')
 
     private val systemContext: Context = ActivityThread.currentActivityThread().systemContext
 
@@ -58,23 +60,37 @@ object ProcessManagerService {
     }
 
     object AppLockService : XC_MethodHook() {
+        // Compatible with different Android version
+        private lateinit var outerField: Field
+        private lateinit var innerField: Field
+        private lateinit var keySetMethod: Method
+
+        private fun getPackageList(record: Any): Set<String> {
+            if (!this::outerField.isInitialized) {
+                outerField = findField(record::class.java) {
+                    name == "pkgList" || name == "mPkgList"
+                }.also { it.isAccessible = true }
+            }
+            val outer = outerField.get(record)
+            return if (outer is ArrayMap<*, *>) {
+                @Suppress("Unchecked_Cast")
+                outer.keys as Set<String>
+            } else {
+                if (!this::innerField.isInitialized) {
+                    innerField = findField(outer::class.java) { name == "mPkgList" }
+                    keySetMethod = findMethod(innerField.get(outer)::class.java) { name == "keySet" }
+                }
+                keySetMethod.invokeAs<Set<String>>(innerField.get(outer))!!
+            }
+        }
+
         override fun beforeHookedMethod(param: MethodHookParam) {
             try {
                 val killer = File("/proc/${Binder.getCallingPid()}/cmdline").readText().trim { it == '\u0000' }
                 if (killerSet.contains(killer)) {
                     val processRecord = param.args[0]
 
-                    val tmp = findField(processRecord::class.java) {
-                        name == "pkgList" || name == "mPkgList"
-                    }.also { it.isAccessible = true }.get(processRecord)
-                    val targets = if (tmp is ArrayMap<*,*>) {
-                        tmp.keys
-                    } else {
-                        tmp!!.getObject("mPkgList")
-                            .invokeMethodAs<Set<String>>("keySet")
-                    }
-
-                    targets!!.forEach {
+                    getPackageList(processRecord).forEach {
                         if (whiteList.contains(it)) {
                             param.args[2] = ProcessConfig.KILL_LEVEL_TRIM_MEMORY
                             Log.i("@Protect: ${processRecord.getObject("processName")}")
