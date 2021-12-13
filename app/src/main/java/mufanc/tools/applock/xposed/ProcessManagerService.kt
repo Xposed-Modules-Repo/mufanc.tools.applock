@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.ActivityThread
 import android.content.Context
 import android.os.Binder
+import android.util.ArrayMap
 import com.github.kyuubiran.ezxhelper.utils.*
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
@@ -63,12 +64,17 @@ object ProcessManagerService {
                 if (killerSet.contains(killer)) {
                     val processRecord = param.args[0]
 
-                    val targetPackages = processRecord
-                        .getObject("pkgList")
-                        .getObject("mPkgList")
-                        .invokeMethodAs<Set<String>>("keySet") ?: return
+                    val tmp = findField(processRecord::class.java) {
+                        name == "pkgList" || name == "mPkgList"
+                    }.also { it.isAccessible = true }.get(processRecord)
+                    val targets = if (tmp is ArrayMap<*,*>) {
+                        tmp.keys
+                    } else {
+                        tmp!!.getObject("mPkgList")
+                            .invokeMethodAs<Set<String>>("keySet")
+                    }
 
-                    targetPackages.forEach {
+                    targets!!.forEach {
                         if (whiteList.contains(it)) {
                             param.args[2] = ProcessConfig.KILL_LEVEL_TRIM_MEMORY
                             Log.i("@Protect: ${processRecord.getObject("processName")}")
