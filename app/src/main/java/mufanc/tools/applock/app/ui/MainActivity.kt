@@ -5,6 +5,9 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
+import mufanc.tools.applock.R
 import mufanc.tools.applock.app.AppInfoHelper
 import mufanc.tools.applock.app.CommandHelper
 import mufanc.tools.applock.app.MyApplication
@@ -22,6 +25,8 @@ class MainActivity : AppCompatActivity() {
 
         isAvailable = checkEnvironment()
         if (isAvailable) {
+            var whiteList = mutableSetOf<String>()
+
             with (binding) {
                 applist.layoutManager = LinearLayoutManager(
                     this@MainActivity,
@@ -33,25 +38,43 @@ class MainActivity : AppCompatActivity() {
                     this@MainActivity, DividerItemDecoration.VERTICAL
                 ).let { applist.addItemDecoration(it) }
 
-                val listener = fun() {
+                fun listener(reload: Boolean = true) {
                     AppSelectAdapter(
-                        AppInfoHelper.getAppInfoList(this@MainActivity),
+                        AppInfoHelper.getAppInfoList(this@MainActivity, reload),
                         CommandHelper.command("readWhiteList", "").let {
                             it?.split("\n")?.toMutableSet() ?: mutableSetOf()
-                        }
+                        }.also { whiteList = it }
                     ).also {
-                        runOnUiThread { applist.adapter = it }
-                    }.notifyDataSetChanged()
+                        runOnUiThread {
+                            applist.adapter = it
+                            it.notifyDataSetChanged()
+                        }
+                    }
                     thread {
-                        Thread.sleep(500)
-                        refresh.isRefreshing = false
+                        Thread.sleep(700)
+                        runOnUiThread { refresh.isRefreshing = false }
                     }
                 }
-                refresh.setOnRefreshListener(listener)
+                refresh.setOnRefreshListener { listener() }
                 refresh.post {
                     refresh.isRefreshing = true
-                    thread {
-                        listener()
+                    thread { listener() }
+                }
+
+                applist.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                    override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                        super.onScrolled(recyclerView, dx, dy)
+                        if (dy > 0) fab.hide() else fab.show()
+                    }
+                })
+
+                fab.setOnClickListener { view ->
+                    if(CommandHelper.command(
+                        "updateWhiteList",
+                        whiteList.joinToString("\n")
+                    ) == "OK") {
+                        Snackbar.make(view, R.string.save_complete, Snackbar.LENGTH_SHORT).show()
+                        listener(false)
                     }
                 }
             }

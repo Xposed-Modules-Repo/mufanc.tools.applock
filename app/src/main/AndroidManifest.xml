@@ -27,6 +27,7 @@
         </activity>
 
         <activity-alias
+            android:enabled="false"
             android:name="AppLock"
             android:targetActivity=".app.ui.MainActivity"
             android:exported="true" >

@@ -47,7 +47,6 @@ object ProcessManagerService {
                         "connectionTest" -> "OK"
                         "updateWhiteList" -> updateWhiteList(args)
                         "readWhiteList" -> readWhiteList()
-                        "saveWhiteList" -> saveWhiteList()
                         else -> "Unknown Operation"
                     }
                 }
@@ -111,7 +110,7 @@ object ProcessManagerService {
         }
     }
 
-    private fun updateWhiteList() {
+    private fun initWhiteList() {
         synchronized (lock) {
             val config = File("$dataDir/whitelist.txt")
             if (!config.exists()) {
@@ -129,34 +128,27 @@ object ProcessManagerService {
 
     private fun updateWhiteList(args: String): String {
         synchronized (lock) {
-            val packageName = args.substring(1)
-            when (args[0]) {
-                '+' -> whiteList.add(packageName)
-                '-' -> whiteList.remove(packageName)
-                else -> return "Unknown Operation"
-            }
-        }
-        return ""
-    }
+            whiteList.clear()
+            whiteList.addAll(args.split("\n"))
 
-    private fun saveWhiteList(): String {
-        synchronized (lock) {
             val config = File("$dataDir/whitelist.txt")
             config.writeText(whiteList.joinToString("\n"))
         }
-        return ""
+        return "OK"
     }
 
     fun main() {
         File(dataDir).mkdir()
-        updateWhiteList()
+        initWhiteList()
 
         findMethod("miui.process.ProcessManagerNative") {
             name == "onTransact"
         }.hookMethod(CommunicationService)
 
-        findMethod("com.android.server.am.ProcessManagerService") {
-            name == "killOnce" && parameterCount == 4
-        }.hookMethod(AppLockService)
+        findAllMethods("com.android.server.am.ProcessManagerService") {
+            name == "killOnce" && parameterTypes[0].simpleName == "ProcessRecord"
+        }.sortedBy {
+            -it.parameterCount
+        }[0].hookMethod(AppLockService)
     }
 }

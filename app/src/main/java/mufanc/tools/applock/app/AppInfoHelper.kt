@@ -13,8 +13,8 @@ object AppInfoHelper {
 
     private lateinit var appInfoList: MutableList<AppInfo>
 
-    fun getAppInfoList(context: Context): MutableList<AppInfo> {
-        if (AppInfoHelper::appInfoList.isInitialized) return appInfoList
+    fun getAppInfoList(context: Context, reload: Boolean): MutableList<AppInfo> {
+        if (AppInfoHelper::appInfoList.isInitialized && !reload) return appInfoList
         appInfoList = mutableListOf()
         val packageManager = context.packageManager
         packageManager.getInstalledApplications(0).forEach { info ->

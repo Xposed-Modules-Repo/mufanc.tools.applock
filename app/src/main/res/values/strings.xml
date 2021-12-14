@@ -10,4 +10,5 @@
     <string name="service_found_no">未发现系统服务</string>
     <string name="connect_test_yes">连接测试成功</string>
     <string name="connect_test_no">连接测试失败</string>
+    <string name="save_complete">保存成功</string>
 </resources>

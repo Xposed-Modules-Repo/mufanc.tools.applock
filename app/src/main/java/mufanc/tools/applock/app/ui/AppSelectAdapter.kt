@@ -9,7 +9,6 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import mufanc.tools.applock.R
 import mufanc.tools.applock.app.AppInfoHelper.AppInfo
-import mufanc.tools.applock.app.CommandHelper
 import mufanc.tools.applock.databinding.ApplistItemBinding
 import java.text.Collator
 import java.util.*
@@ -57,16 +56,11 @@ class AppSelectAdapter(
             packageNameHolder.text = appInfo.packageName
 
             checkboxHolder.setOnCheckedChangeListener { _, checked ->
-                CommandHelper.command(
-                    "updateWhiteList",
-                    if (checked) {
-                        selectedApps.add(appInfo.packageName)
-                        "+"
-                    } else {
-                        selectedApps.remove(appInfo.packageName)
-                        "-"
-                    } + appInfo.packageName
-                )
+                if (checked) {
+                    selectedApps.add(appInfo.packageName)
+                } else {
+                    selectedApps.remove(appInfo.packageName)
+                }
             }
             checkboxHolder.isChecked = selectedApps.contains(appInfo.packageName)
         }
